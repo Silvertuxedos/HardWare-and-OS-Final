@@ -1,0 +1,68 @@
+#include <stdio.h> 
+
+#define DISK_BLOCKS 32 
+
+Comment:  diskBits[i] == 0 means block i is free  and  diskBits[i] == 1 means block i is allocated  
+
+int diskBits[DISK_BLOCKS] = {0}; 
+
+/* bitmap_alloc(request): finds a consecutive run of free blocks of length = request,Marks them as allocated (sets bits to 1),Returns the starting block index, or -1 if not possible 
+
+ int bitmap_alloc (int request) { 
+
+ We only start scanning where a full "request" length can still fit  
+
+for (int start = 0; start <= DISK_BLOCKS - request; start++) { 
+
+   int run_is_free = 1;  
+
+ assume free until proven otherwise 
+ 
+Check the next "request" blocks to see if they are all 0 
+
+ 
+    for (int offset = 0; offset < request; offset++) { 
+        if (diskBits[start + offset] == 1) { 
+            run_is_free = 0;   // not free (at least one block already used) 
+            break;             // stop checking this start position 
+        } 
+    } 
+ 
+    // If we found a fully free run, allocate it 
+    if (run_is_free) { 
+        for (int offset = 0; offset < request; offset++) { 
+            diskBits[start + offset] = 1; // mark each block as allocated 
+        } 
+        return start; // allocation succeeded 
+    } 
+} 
+ 
+// No consecutive region big enough 
+return -1; 
+  
+
+} 
+
+/* bitmap_free(start, size): 
+
+Frees "size" blocks starting from "start" 
+
+Sets their bits back to 0 
+
+ void bitmap_free(int start, int size) { for (int i = start; i < start + size; i++) { diskBits[i] = 0;  
+
+}  
+
+} 
+
+/* Prints the bitmap in one line: 0=free, 1=allocated */  
+
+void bitmap_print(void) { 
+
+ for (int i = 0; i < DISK_BLOCKS; i++) { 
+
+ printf("%d", diskBits[i]); } printf("\n");  
+
+} 
+
+ 
