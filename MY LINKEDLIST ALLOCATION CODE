@@ -1,0 +1,134 @@
+#include <stdio.h> 
+
+ #include <stdlib.h> 
+
+#define DISK_BLOCKS 32 
+
+// This array represents the disk. if a value is 0, the block is free. If a value is 1, the block is already used.  
+
+int diskState[DISK_BLOCKS] = {0}; 
+
+ 
+
+// Each FileBlock represents one disk block that belongs to a file. // The blocks of a file are connected together using a linked list. 
+
+ typedef struct FileBlock { 
+
+ int idx;  
+
+// Which disk block this node represents 
+
+ struct FileBlock* next;  
+
+// Points to the next block of the same file 
+
+ } FileBlock; 
+
+// Looks for any free block on the disk. 
+
+ // Returns the index of the first free block it finds. 
+
+ // If the disk is full, it returns -1. 
+
+ int find_any_free_block() { 
+
+ for (int i = 0; i < DISK_BLOCKS; i++) {  
+
+if (diskState[i] == 0)  
+
+return i;  
+
+}  
+
+return -1; 
+
+ } 
+
+// Allocates a file using linked-list allocation.  
+
+// The blocks do not need to be next to each other on the disk. 
+
+ // It returns the head of the linked list that represents the file. 
+
+ // If allocation fails halfway, everything allocated so far is undone. 
+
+ FileBlock* linked_alloc(int blocksNeeded)  
+
+{ 
+
+ FileBlock* head = NULL;  
+
+// First block of the file 
+
+ FileBlock* tail = NULL;  
+
+// Last block, used to easily add new blocks 
+
+for (int count = 0; count < blocksNeeded; count++)  { 
+    int freeIdx = find_any_free_block(); 
+ 
+    // If there are no free blocks left, cancel the whole allocation 
+    if (freeIdx == -1) { 
+
+ 
+        FileBlock* cur = head; 
+        while (cur != NULL) { 
+            diskState[cur->idx] = 0; 
+            FileBlock* temp = cur; 
+            cur = cur->next; 
+            free(temp); 
+        } 
+        return NULL; 
+    } 
+ 
+    // Mark the chosen block as used 
+    diskState[freeIdx] = 1; 
+ 
+    // Create a new node for this block 
+    FileBlock* node = (FileBlock*)malloc(sizeof(FileBlock)); 
+    node->idx = freeIdx; 
+    node->next = NULL; 
+ 
+    // Add the block to the file’s linked list 
+    if (head == NULL) 
+        head = node; 
+    else 
+        tail->next = node; 
+ 
+    tail = node; 
+} 
+ 
+return head; 
+  
+
+} 
+
+// Frees a file by walking through its linked list. // Each block is marked free again and its node is deleted. 
+
+ void linked_free(FileBlock* fileHead) { 
+
+ FileBlock* cur = fileHead;  
+
+while (cur != NULL) { 
+
+ diskState[cur->idx] = 0;  
+
+FileBlock* temp = cur;  
+
+cur = cur->next; free(temp);  
+
+} 
+
+ } 
+
+// Prints the current state of the disk. // 0 means free block, 1 means allocated block. 
+
+ void disk_print() { for (int i = 0; i < DISK_BLOCKS; i++) {  
+
+printf("%d", diskState[i]);  
+
+}  
+
+printf("\n"); 
+
+ } 
