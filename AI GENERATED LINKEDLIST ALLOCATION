@@ -1,0 +1,90 @@
+#include <stdio.h>  
+
+#include <stdlib.h> 
+
+#define SIZE 32 
+
+int disk[SIZE] = {0}; 
+
+typedef struct BlockNode { 
+
+ int blockIndex;  
+
+struct BlockNode* next;  
+
+} BlockNode; 
+
+int find_free_block() { 
+
+ for (int i = 0; i < SIZE; i++) { 
+
+ if (disk[i] == 0) return i; 
+
+ }  
+
+return -1; } 
+
+BlockNode* allocate_linkedlist(int blocksNeeded) { 
+
+ BlockNode* head = NULL;  
+
+BlockNode* tail = NULL; 
+
+for (int k = 0; k < blocksNeeded; k++) { 
+    int b = find_free_block(); 
+    if (b == -1) { 
+        // fail: free any blocks already allocated in this attempt 
+        BlockNode* cur = head; 
+        while (cur) { 
+            disk[cur->blockIndex] = 0; 
+            BlockNode* tmp = cur; 
+            cur = cur->next; 
+            free(tmp); 
+        } 
+        return NULL; 
+    } 
+ 
+    disk[b] = 1; 
+ 
+    BlockNode* node = (BlockNode*)malloc(sizeof(BlockNode)); 
+    node->blockIndex = b; 
+    node->next = NULL; 
+ 
+    if (head == NULL) head = node; 
+    else tail->next = node; 
+ 
+    tail = node; 
+} 
+ 
+return head; 
+} 
+
+void free_linkedlist(BlockNode* head) { 
+
+ BlockNode* cur = head;  
+
+while (cur) { 
+
+ disk[cur->blockIndex] = 0;  
+
+BlockNode* tmp = cur;  
+
+cur = cur->next;  
+
+free(tmp);  
+
+}  
+
+} 
+
+void print_disk() { 
+
+ for (int i = 0; i < SIZE; i++) { 
+
+ printf("%d", disk[i]);  
+
+}  
+
+printf("\n");  
+
+}
