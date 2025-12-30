@@ -1,0 +1,152 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MEM 100
+
+typedef struct FreeNode {
+    int start, len;
+    struct FreeNode* next;
+} FreeNode;
+
+typedef struct Allocator {
+    FreeNode* freeList;
+    FreeNode* nextPos;
+} Allocator;
+
+FreeNode* node_new(int s, int l) {
+    FreeNode* n = (FreeNode*)malloc(sizeof(FreeNode));
+    n->start = s;
+    n->len = l;
+    n->next = NULL;
+    return n;
+}
+
+void init_alloc(Allocator* A) {
+    A->freeList = node_new(0, MEM);
+    A->nextPos = A->freeList;
+}
+
+void merge_free(Allocator* A) {
+    FreeNode* cur = A->freeList;
+    while (cur && cur->next) {
+        if (cur->start + cur->len == cur->next->start) {
+            FreeNode* del = cur->next;
+            cur->len += del->len;
+            cur->next = del->next;
+            if (A->nextPos == del) A->nextPos = cur;
+            free(del);
+        } else cur = cur->next;
+    }
+}
+
+void free_block(Allocator* A, int start, int size) {
+    FreeNode* n = node_new(start, size);
+
+    if (!A->freeList || start < A->freeList->start) {
+        n->next = A->freeList;
+        A->freeList = n;
+    } else {
+        FreeNode* cur = A->freeList;
+        while (cur->next && cur->next->start < start) cur = cur->next;
+        n->next = cur->next;
+        cur->next = n;
+    }
+    merge_free(A);
+}
+
+int take_from(Allocator* A, FreeNode* seg, FreeNode* prev, int size) {
+    int addr = seg->start;
+    seg->start += size;
+    seg->len -= size;
+
+    if (seg->len == 0) {
+        if (prev) prev->next = seg->next;
+        else A->freeList = seg->next;
+        if (A->nextPos == seg) A->nextPos = A->freeList;
+        free(seg);
+    } else {
+        A->nextPos = seg;
+    }
+    return addr;
+}
+
+int allocate_best_fit(Allocator* A, int size) {
+    FreeNode *cur = A->freeList, *prev = NULL;
+    FreeNode *best = NULL, *bestPrev = NULL;
+
+    while (cur) {
+        if (cur->len >= size && (!best || cur->len < best->len)) {
+            best = cur; bestPrev = prev;
+        }
+        prev = cur; cur = cur->next;
+    }
+    return best ? take_from(A, best, bestPrev, size) : -1;
+}
+
+int allocate_worst_fit(Allocator* A, int size) {
+    FreeNode *cur = A->freeList, *prev = NULL;
+    FreeNode *worst = NULL, *worstPrev = NULL;
+
+    while (cur) {
+        if (cur->len >= size && (!worst || cur->len > worst->len)) {
+            worst = cur; worstPrev = prev;
+        }
+        prev = cur; cur = cur->next;
+    }
+    return worst ? take_from(A, worst, worstPrev, size) : -1;
+}
+
+int allocate_next_fit(Allocator* A, int size) {
+    if (!A->freeList) return -1;
+    if (!A->nextPos) A->nextPos = A->freeList;
+
+    FreeNode* start = A->nextPos;
+    FreeNode* cur = start;
+    FreeNode* prev = NULL;
+
+    if (A->freeList != cur) {
+        FreeNode* t = A->freeList;
+        while (t && t->next != cur) t = t->next;
+        prev = t;
+    }
+
+    do {
+        if (cur->len >= size) return take_from(A, cur, prev, size);
+        prev = cur;
+        cur = cur->next ? cur->next : A->freeList;
+        if (cur == A->freeList) prev = NULL;
+    } while (cur != start);
+
+    return -1;
+}
+
+void print_free_list(Allocator* A) {
+    FreeNode* cur = A->freeList;
+    while (cur) {
+        printf("[%d,%d]", cur->start, cur->len);
+        if (cur->next) printf(" -> ");
+        cur = cur->next;
+    }
+    printf("\n");
+}
+
+int main() {
+    Allocator B, W, N;
+    init_alloc(&B);
+    init_alloc(&W);
+    init_alloc(&N);
+
+    int b1 = allocate_best_fit(&B, 10);
+    int w1 = allocate_worst_fit(&W, 10);
+    int n1 = allocate_next_fit(&N, 10);
+
+    free_block(&B, b1, 10);
+    free_block(&W, w1, 10);
+    free_block(&N, n1, 10);
+
+    print_free_list(&B);
+    print_free_list(&W);
+    print_free_list(&N);
+
+    return 0;
+}
