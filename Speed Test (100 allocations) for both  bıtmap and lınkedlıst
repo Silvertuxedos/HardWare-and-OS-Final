@@ -1,0 +1,98 @@
+#include <stdio.h>
+#include <time.h>
+
+#define DISK_SIZE 64
+#define RUNS 100
+
+/* ------------ BITMAP ALLOCATION ------------ */
+
+int bitmap[DISK_SIZE];
+
+void bitmap_init() {
+    for (int i = 0; i < DISK_SIZE; i++)
+        bitmap[i] = 0;
+}
+
+int bitmap_allocate(int size) {
+    int count = 0;
+    for (int i = 0; i < DISK_SIZE; i++) {
+        if (bitmap[i] == 0) {
+            count++;
+            if (count == size) {
+                for (int j = i; j > i - size; j--)
+                    bitmap[j] = 1;
+                return 1;
+            }
+        } else {
+            count = 0;
+        }
+    }
+    return 0;
+}
+
+void bitmap_free() {
+    for (int i = 0; i < DISK_SIZE; i++)
+        bitmap[i] = 0;
+}
+
+/* ------------ LINKED LIST ALLOCATION ------------ */
+
+int linked[DISK_SIZE];
+
+void linked_init() {
+    for (int i = 0; i < DISK_SIZE; i++)
+        linked[i] = -1;
+}
+
+int linked_allocate(int size) {
+    int prev = -1;
+    for (int i = 0; i < size; i++) {
+        linked[i] = prev;
+        prev = i;
+    }
+    return 1;
+}
+
+void linked_free() {
+    for (int i = 0; i < DISK_SIZE; i++)
+        linked[i] = -1;
+}
+
+/* ------------ SPEED TEST ------------ */
+
+int main() {
+    clock_t start, end;
+    double bitmap_time, linked_time;
+
+    /* BITMAP TEST */
+    bitmap_init();
+    start = clock();
+
+    for (int i = 0; i < RUNS; i++) {
+        bitmap_allocate(5);
+        bitmap_free();
+    }
+
+    end = clock();
+    bitmap_time = (double)(end - start) / CLOCKS_PER_SEC;
+
+    /* LINKED LIST TEST */
+    linked_init();
+    start = clock();
+
+    for (int i = 0; i < RUNS; i++) {
+        linked_allocate(5);
+        linked_free();
+    }
+
+    end = clock();
+    linked_time = (double)(end - start) / CLOCKS_PER_SEC;
+
+    /* PROOF OUTPUT */
+    printf("Speed Test Completed\n");
+    printf("Total runs: %d\n\n", RUNS);
+    printf("Bitmap Allocation Time: %.6f seconds\n", bitmap_time);
+    printf("Linked List Allocation Time: %.6f seconds\n", linked_time);
+
+    return 0;
+}
