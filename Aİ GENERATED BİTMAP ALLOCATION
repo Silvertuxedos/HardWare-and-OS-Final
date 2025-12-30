@@ -1,0 +1,65 @@
+#include <stdio.h> 
+
+#define SIZE 32 
+
+int bitmap[SIZE] = {0}; 
+
+int allocate_bitmap(int size) { 
+
+    for (int i = 0; i <= SIZE - size; i++) { 
+
+        int ok = 1; 
+
+        for (int j = 0; j < size; j++) { 
+
+            if (bitmap[i + j] == 1) { 
+
+                ok = 0; 
+
+                break; 
+
+            } 
+
+        } 
+
+        if (ok) { 
+
+           for (int j = 0; j < size; j++) { 
+
+                bitmap[i + j] = 1; 
+
+            } 
+
+            return i; 
+
+        } 
+
+    } 
+
+    return -1; 
+
+} 
+
+void free_bitmap(int start, int size) { 
+
+    for (int i = start; i < start + size; i++) { 
+
+        bitmap[i] = 0; 
+
+    } 
+
+} 
+
+  
+
+void print_bitmap() { 
+
+    for (int i = 0; i < SIZE; i++) { 
+
+        printf("%d", bitmap[i]); 
+
+    } 
+
+    printf("\n"); 
+
+}
